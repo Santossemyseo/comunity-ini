@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  # Jupyter para scraping y análisis SEO
+  jupyter:
+    image: jupyter/minimal-notebook
+    container_name: jupyter
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+    command: start-notebook.sh --NotebookApp.token=''
+    restart: always
+
+  # N8N para automatización de publicaciones en redes
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=admin
+    restart: always
+
+  # Metabase para visualización de datos
+  metabase:
+    image: metabase/metabase
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./metabase-data:/metabase-data
+    environment:
+      - MB_DB_FILE=/metabase-data/metabase.db
+    restart: always
+
+  # Grafana para monitoreo de métricas
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "4000:3000"
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    restart: always
+
+  # Prometheus para recolección de métricas
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+    restart: always
+
+  # Matomo para analítica web
+  matomo:
+    image: matomo
+    container_name: matomo
+    ports:
+      - "8080:80"
+    volumes:
+      - ./matomo:/var/www/html
+    restart: always
+
+  # Plausible Analytics (alternativa ligera a Google Analytics)
+  plausible:
+    image: plausible/analytics
+    container_name: plausible
+    ports:
+      - "8000:8000"
+    environment:
+      - BASE_URL=http://localhost:8000
+    restart: always
+
+  # Rasa para chatbot avanzado
+  rasa:
+    image: rasa/rasa
+    container_name: rasa
+    ports:
+      - "5005:5005"
+    volumes:
+      - ./rasa:/app
+    command: run --enable-api
+    restart: always
+
+  # BotPress para crear bots sin código
+  botpress:
+    image: botpress/server
+    container_name: botpress
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./botpress-data:/botpress/data
+    restart: always
+
+  # ChatterBot para chatbot basado en IA
+  chatterbot:
+    image: gunthercox/chatterbot-corpus
+    container_name: chatterbot
+    restart: always
+
+  # Zulip para gestión de chats y notificaciones
+  zulip:
+    image: zulip/docker-zulip
+    container_name: zulip
+    ports:
+      - "9991:9991"
+    restart: always
+
+  # NTFY para recibir alertas en móvil o escritorio
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: ntfy
+    ports:
+      - "2580:80"
+    restart: always
