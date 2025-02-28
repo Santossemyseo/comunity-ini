@@ -1,0 +1,3 @@
+base-url: http://localhost:2580
+cache-file: C:/SystemS/comunity-ini/ntfy/cache.db
+auth-file: C:/SystemS/comunity-ini/ntfy/auth.db

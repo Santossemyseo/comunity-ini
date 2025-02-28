@@ -1,16 +1,6 @@
 services:
 
-  #configuracion inicial para crear los archivos de configuracion de prometeus, plausible y ntfy
-  init-config:
-    image: busybox
-    container_name: init-config
-    volumes:
-      - ./init-config.sh:/init-config.sh
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./plausible-config.env:/app/plausible-config.env
-      - ./ntfy.yml:/etc/ntfy/config.yml
-    entrypoint: ["/bin/sh", "-c", "[ \"$(uname)\" = \"Linux\" ] && chmod +x /init-config.sh && sh /init-config.sh"]
-    restart: "no"
+  #configuracion inicial para crear los archivos de configuracion de prometeus, plausible y ntfy hay qu ejecutar init 1
 
   # Jupyter para scraping y análisis SEO
   jupyter:
@@ -24,6 +14,8 @@ services:
       - JUPYTER_ENABLE_LAB=yes
     command: start-notebook.sh --NotebookApp.token=''
     restart: always
+    networks:
+      - my_network
 
   # N8N para automatización de publicaciones en redes
   n8n:
@@ -38,6 +30,8 @@ services:
       - N8N_BASIC_AUTH_USER=admin
       - N8N_BASIC_AUTH_PASSWORD=admin
     restart: always
+    networks:
+      - my_network
 
   # Metabase para visualización de datos
   metabase:
@@ -50,6 +44,8 @@ services:
     environment:
       - MB_DB_FILE=/metabase-data/metabase.db
     restart: always
+    networks:
+      - my_network
 
   # Grafana para monitoreo de métricas
   grafana:
@@ -60,6 +56,8 @@ services:
     volumes:
       - ./grafana-data:/var/lib/grafana
     restart: always
+    networks:
+      - my_network
 
   # Prometheus para recolección de métricas
   prometheus:
@@ -68,8 +66,10 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus:/etc/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: always
+    networks:
+      - my_network
 
   # Matomo para analítica web
   matomo:
@@ -80,6 +80,8 @@ services:
     volumes:
       - ./matomo:/var/www/html
     restart: always
+    networks:
+      - my_network
 
   # Plausible Analytics (alternativa ligera a Google Analytics)
   plausible:
@@ -90,6 +92,8 @@ services:
     environment:
       - BASE_URL=http://localhost:8000
     restart: always
+    networks:
+      - my_network
 
   # Rasa para chatbot avanzado
   rasa:
@@ -101,6 +105,8 @@ services:
       - ./rasa:/app
     command: run --enable-api
     restart: always
+    networks:
+      - my_network
 
   # BotPress para crear bots sin código
   botpress:
@@ -111,6 +117,8 @@ services:
     volumes:
       - ./botpress-data:/botpress/data
     restart: always
+    networks:
+      - my_network
 
   # ChatterBot para chatbot basado en IA
 #  chatterbot:
@@ -131,6 +139,8 @@ services:
     ports:
       - "9991:9991"
     restart: always
+    networks:
+      - my_network
 
   # NTFY para recibir alertas en móvil o escritorio
   ntfy:
@@ -139,3 +149,10 @@ services:
     ports:
       - "2580:80"
     restart: always
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge
+  

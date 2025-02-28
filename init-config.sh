@@ -67,12 +67,16 @@ fi
 if [ ! -f "$PROMETHEUS_CONFIG" ]; then
     cat <<EOL > "$PROMETHEUS_CONFIG"
 global:
-  scrape_interval: 15s
+  scrape_interval: 5s
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+      
+  - job_name: "docker"
+    static_configs:
+      - targets: ["host.docker.internal:9323"]
 EOL
     echo "Archivo prometheus.yml creado en $PROMETHEUS_CONFIG"
 fi
@@ -99,3 +103,4 @@ EOL
 fi
 
 echo "✅ Instalación y configuración completadas."
+pause
