@@ -1,7 +1,8 @@
 # comunity-ini
  son los inicios de la administracion de redes sociales
 
- version: '3.8'
+# si estas en windows ajusta las rutas de init-config y se requiere
+git bash o wsl instalado y en ejecucion
 
 services:
   # Jupyter para scraping y análisis SEO

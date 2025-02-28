@@ -1,6 +1,17 @@
-version: '3.8'
-
 services:
+
+  #configuracion inicial para crear los archivos de configuracion de prometeus, plausible y ntfy
+  init-config:
+    image: busybox
+    container_name: init-config
+    volumes:
+      - ./init-config.sh:/init-config.sh
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./plausible-config.env:/app/plausible-config.env
+      - ./ntfy.yml:/etc/ntfy/config.yml
+    entrypoint: ["/bin/sh", "-c", "[ \"$(uname)\" = \"Linux\" ] && chmod +x /init-config.sh && sh /init-config.sh"]
+    restart: "no"
+
   # Jupyter para scraping y análisis SEO
   jupyter:
     image: jupyter/minimal-notebook
@@ -102,10 +113,16 @@ services:
     restart: always
 
   # ChatterBot para chatbot basado en IA
-  chatterbot:
-    image: gunthercox/chatterbot-corpus
-    container_name: chatterbot
-    restart: always
+#  chatterbot:
+ #   image: gunthercox/chatterbot-corpus
+  #  container_name: chatterbot
+   # restart: always
+    # ChatterBot (alternativa)
+ # chatterbot:
+#    image: ghcr.io/gunthercox/chatterbot
+#    container_name: chatterbot
+#   restart: always
+
 
   # Zulip para gestión de chats y notificaciones
   zulip:
