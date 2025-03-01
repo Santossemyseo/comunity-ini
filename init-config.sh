@@ -103,4 +103,3 @@ EOL
 fi
 
 echo "✅ Instalación y configuración completadas."
-pause
