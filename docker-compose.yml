@@ -1,6 +1,10 @@
-services:
+version: "3.8"
 
-  #configuracion inicial para crear los archivos de configuracion de prometeus, plausible y ntfy hay qu ejecutar init 1
+services:
+  app:
+    image: nginx
+    networks:
+      - mynetwork
 
   # Jupyter para scraping y análisis SEO
   jupyter:
@@ -15,7 +19,7 @@ services:
     command: start-notebook.sh --NotebookApp.token=''
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # N8N para automatización de publicaciones en redes
   n8n:
@@ -31,7 +35,7 @@ services:
       - N8N_BASIC_AUTH_PASSWORD=admin
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Metabase para visualización de datos
   metabase:
@@ -45,7 +49,7 @@ services:
       - MB_DB_FILE=/metabase-data/metabase.db
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Grafana para monitoreo de métricas
   grafana:
@@ -57,7 +61,7 @@ services:
       - ./grafana-data:/var/lib/grafana
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Prometheus para recolección de métricas
   prometheus:
@@ -69,7 +73,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Matomo para analítica web
   matomo:
@@ -81,7 +85,7 @@ services:
       - ./matomo:/var/www/html
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Plausible Analytics (alternativa ligera a Google Analytics)
   plausible:
@@ -93,7 +97,7 @@ services:
       - BASE_URL=http://localhost:8000
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # Rasa para chatbot avanzado
   rasa:
@@ -106,19 +110,19 @@ services:
     command: run --enable-api
     restart: always
     networks:
-      - my_network
+      - mynetwork
 
   # BotPress para crear bots sin código
-  botpress:
-    image: botpress/server
-    container_name: botpress
-    ports:
-      - "3001:3000"
-    volumes:
-      - ./botpress-data:/botpress/data
-    restart: always
-    networks:
-      - my_network
+ # botpress:
+ #   image: botpress/server
+ #   container_name: botpress
+ #   ports:
+ #     - "3001:3000"
+ #   volumes:
+ #     - ./botpress-data:/botpress/data
+ #   restart: always
+ #   networks:
+ #     - mynetwork
 
   # ChatterBot para chatbot basado en IA
 #  chatterbot:
@@ -133,26 +137,25 @@ services:
 
 
   # Zulip para gestión de chats y notificaciones
-  zulip:
-    image: zulip/docker-zulip
-    container_name: zulip
-    ports:
-      - "9991:9991"
-    restart: always
-    networks:
-      - my_network
+#  zulip:
+#    image: zulip/docker-zulip
+#    container_name: zulip
+#    ports:
+#      - "9991:9991"
+#    restart: always
+#    networks:
+#      - mynetwork
 
   # NTFY para recibir alertas en móvil o escritorio
-  ntfy:
-    image: binwiederhier/ntfy
-    container_name: ntfy
-    ports:
-      - "2580:80"
-    restart: always
-    networks:
-      - my_network
+#  ntfy:
+ #   image: binwiederhier/ntfy
+  #  container_name: ntfy
+   # ports:
+    #  - "2580:80"
+    #restart: always
+    #networks:
+    #  - mynetwork
 
 networks:
-  my_network:
+  mynetwork:
     driver: bridge
-  
