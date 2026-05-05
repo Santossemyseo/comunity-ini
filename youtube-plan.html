@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan de Automatización de Video y Contenido Multimedia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+    - Report Info: Plan General del Sistema -> Goal: Proveer visión general -> Viz/Presentation: Secciones temáticas con texto colapsable, diagrama basado en HTML/CSS para la arquitectura. Interaction: Menú de navegación, click-to-expand. Justification: Desglosa un plan complejo en partes manejables. Method: HTML, Tailwind, Vanilla JS.
+    - Report Info: Lista de Herramientas (Sección 5 del informe consolidado) -> Goal: Detallar herramientas disponibles -> Viz/Presentation: Tabla/cuadrícula interactiva. Interaction: Filtros por categoría, hover/click para detalles (mostrados en área de contenido principal o modal). Justification: Fácil comparación y exploración enfocada de herramientas. Method: HTML, Tailwind, JS.
+    - Report Info: Resoluciones de Salida (Sección 4 del informe consolidado) -> Goal: Mostrar variedad de formatos de salida -> Viz/Presentation: Gráfico de Barras. Interaction: Tooltips. Justification: Representación visual de formatos de salida. Library: Chart.js.
+    - Report Info: YAML de n8n, YAML de Docker Compose (Secciones 10.2, 6 del informe consolidado) -> Goal: Mostrar ejemplos de configuración -> Viz/Presentation: Bloques de código preformateados. Interaction: Ninguna (visualización estática). Justification: Presentación clara del código. Method: HTML `<pre><code>`.
+    - Report Info: Diagrama de Arquitectura (Mermaid en fuente original) -> Goal: Visualizar componentes y flujo del sistema -> Viz/Presentation: Recreación del diagrama con HTML/CSS/Tailwind. Interaction: Posibles efectos hover en componentes para descripciones breves. Justification: Comprensión visual de la estructura del sistema sin usar MermaidJS (no permitido). Method: HTML, Tailwind.
+    - Report Info: Puntos de Validación (ej. API Invidious, límites API TikTok) -> Goal: Resaltar consideraciones críticas -> Viz/Presentation: Marcadores visuales distintivos (iconos, color de fondo) en secciones relevantes (ej. Herramientas, Consideraciones). Interaction: Tooltips explicando la validación. Justification: Atrae la atención del usuario a advertencias importantes. Method: HTML, Tailwind, JS para tooltips.
+    CONFIRMING NO SVG/Mermaid. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .nav-link { transition: background-color 0.3s, color 0.3s; }
+        .nav-link.active { background-color: #d97706; color: #fff; }
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+        .code-block { background-color: #282c34; color: #abb2bf; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.875rem; }
+        .tool-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; background-color: #fff; }
+        .tool-card h3 { color: #b45309; }
+        .validation-required { background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 0.5rem; margin-top: 0.5rem; }
+        .validation-required strong { color: #b91c1c; }
+        .diagram-container { border: 1px solid #d4d4d8; padding: 1rem; border-radius: 0.5rem; background: #fafafa; }
+        .diagram-box { background-color: #fff; border: 1px solid #a3a3a3; padding: 0.5rem 1rem; border-radius: 0.25rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 0.5rem; }
+        .diagram-group { border: 2px dashed #fbbf24; padding: 1rem; margin-top:1rem; border-radius: 0.5rem; }
+        .diagram-arrow { display: flex; align-items: center; justify-content: center; margin: 0 0.25rem; color: #78716c; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 300px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        .collapsible-header { cursor: pointer; }
+        .collapsible-content { display: none; }
+        .collapsible-content.open { display: block; }
+    </style>
+</head>
+<body class="bg-amber-50 text-neutral-800">
+    <header class="bg-neutral-800 text-amber-50 p-4 shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold">Plan de Automatización de Video</h1>
+            <span class="text-2xl">🎬</span>
+        </div>
+    </header>
+
+    <nav class="bg-neutral-700 text-amber-100 shadow-md sticky top-[68px] md:top-[72px] z-40">
+        <div class="container mx-auto px-4">
+            <ul class="flex flex-wrap justify-center md:justify-start space-x-2 sm:space-x-3 md:space-x-4 py-2 text-sm sm:text-base">
+                <li><a href="#vision-general" class="nav-link active px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Visión General</a></li>
+                <li><a href="#arquitectura" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Arquitectura</a></li>
+                <li><a href="#herramientas" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Herramientas</a></li>
+                <li><a href="#flujo-trabajo" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Flujo de Trabajo</a></li>
+                <li><a href="#configuracion" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Configuración</a></li>
+                <li><a href="#consideraciones" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Consideraciones</a></li>
+                <li><a href="#monitoreo" class="nav-link px-3 py-2 rounded-md hover:bg-amber-600 hover:text-white block">Monitoreo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 md:p-6 lg:p-8">
+        <section id="vision-general" class="content-section active">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Visión General y Objetivos</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Esta sección introduce el propósito fundamental del sistema de automatización de video. El objetivo es diseñar un sistema robusto, gratuito y completamente local que permita la edición y generación de videos de manera automatizada. Exploraremos las capacidades clave, desde la manipulación básica de videos hasta la generación de contenido mediante IA y la publicación en diversas plataformas sociales, todo orquestado mediante n8n.
+            </p>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3">🎯 Objetivo Principal</h3>
+                <p class="mb-4 text-neutral-600">Diseñar un sistema que, mediante comandos y/o flujos visuales en n8n, permita:</p>
+                <ul class="list-disc list-inside space-y-2 text-neutral-600 mb-4">
+                    <li>Unir y recortar videos.</li>
+                    <li>Insertar transiciones, textos, imágenes y audios.</li>
+                    <li>Ajustar resolución y tamaño para distintas redes.</li>
+                    <li>Generar videos (ASMR, animaciones, explicativos) a partir de prompts de texto.</li>
+                    <li>Automatizar desde la búsqueda hasta la publicación en YouTube, Shorts, Facebook, TikTok, Instagram, etc.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-amber-600 mb-3">🏗️ Pilares del Pipeline</h3>
+                <ol class="list-decimal list-inside space-y-2 text-neutral-600">
+                    <li><strong>Adquisición:</strong> Descarga automática desde fuentes públicas.</li>
+                    <li><strong>Procesamiento y Edición:</strong> Transformación, mejora y conversión de formatos, añadiendo valor significativo.</li>
+                    <li><strong>Mejora con IA:</strong> Utilización de herramientas de IA para transcripción, generación de voz, y análisis.</li>
+                    <li><strong>Orquestación:</strong> Flujos de trabajo programados y basados en eventos utilizando n8n.</li>
+                    <li><strong>Publicación:</strong> Subida a plataformas sociales con metadatos optimizados.</li>
+                    <li><strong>Almacenamiento y Versionado:</strong> Gestión eficiente de archivos, metadatos y código.</li>
+                    <li><strong>Supervisión y Alertas:</strong> Logs, métricas y notificaciones para asegurar la robustez del sistema.</li>
+                    <li><strong>CI/CD y Despliegue:</strong> Integración y despliegue continuos para agilizar el desarrollo y mantenimiento.</li>
+                    <li><strong>Documentación:</strong> Documentación clara y completa del sistema.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="arquitectura" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Arquitectura del Sistema</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Aquí se detalla la estructura de alto nivel del sistema de automatización. Presentamos un diagrama que ilustra los componentes principales y sus interacciones, seguido de una descripción de las entradas y salidas típicas del sistema, incluyendo un vistazo a los formatos de video para diferentes plataformas.
+            </p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">🏛️ Diagrama de Alto Nivel (Recreación HTML/CSS) <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                <div class="diagram-container collapsible-content mt-4">
+                    <p class="text-sm text-neutral-600 mb-4">Este diagrama representa el flujo general del sistema, desde las fuentes externas hasta la publicación, pasando por los módulos locales de procesamiento y orquestación.</p>
+                    
+                    <div class="diagram-group">
+                        <p class="font-semibold text-center text-amber-700">Fuentes Externas</p>
+                        <div class="flex flex-wrap justify-center">
+                            <div class="diagram-box">YouTube</div>
+                            <div class="diagram-box">TikTok</div>
+                            <div class="diagram-box">Instagram</div>
+                            <div class="diagram-box">Otras Fuentes</div>
+                        </div>
+                    </div>
+                    <div class="text-center text-3xl my-2">⬇️</div>
+                    <div class="diagram-group">
+                        <p class="font-semibold text-center text-amber-700">Sistema Local Automatizado (Dockerizado)</p>
+                        <div class="diagram-box mx-auto w-1/2 sm:w-1/3">n8n (Orquestador)</div>
+                        <div class="flex justify-center items-center my-2">
+                            <div class="diagram-arrow">↙️</div> <div class="diagram-arrow">⬇️</div> <div class="diagram-arrow">↘️</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="diagram-group">
+                                <p class="font-semibold text-center text-sm">Adquisición</p>
+                                <div class="diagram-box">Descarga (yt-dlp, Scripts)</div>
+                            </div>
+                            <div class="diagram-group">
+                                <p class="font-semibold text-center text-sm">Procesamiento y Edición</p>
+                                <div class="diagram-box">FFmpeg</div>
+                                <div class="diagram-box">MoviePy</div>
+                                <div class="diagram-box">Manim</div>
+                                <div class="diagram-box">Audio Tools</div>
+                            </div>
+                            <div class="diagram-group">
+                                <p class="font-semibold text-center text-sm">Mejora con IA</p>
+                                <div class="diagram-box">WhisperX</div>
+                                <div class="diagram-box">TTS (gTTS, etc.)</div>
+                                <div class="diagram-box">Stable Diffusion</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center items-center my-2">
+                             <div class="diagram-arrow">↖️</div> <div class="diagram-arrow">⬆️</div> <div class="diagram-arrow">↗️</div>
+                        </div>
+                         <div class="diagram-box mx-auto w-1/2 sm:w-1/3">Almacenamiento Local (Archivos Crudos, Procesados)</div>
+                         <div class="text-center text-3xl my-2">⬇️</div>
+                         <div class="diagram-group">
+                            <p class="font-semibold text-center text-sm">Publicación</p>
+                            <div class="diagram-box">Scripts Python (APIs Sociales)</div>
+                        </div>
+                    </div>
+                     <div class="text-center text-3xl my-2">⬇️</div>
+                     <div class="diagram-group">
+                        <p class="font-semibold text-center text-amber-700">Plataformas de Destino</p>
+                        <div class="flex flex-wrap justify-center">
+                            <div class="diagram-box">YouTube</div>
+                            <div class="diagram-box">TikTok</div>
+                            <div class="diagram-box">Instagram</div>
+                            <div class="diagram-box">Facebook</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 diagram-group">
+                        <p class="font-semibold text-center text-amber-700">Infraestructura de Soporte</p>
+                        <div class="flex flex-wrap justify-around">
+                            <div class="diagram-box">Docker Host</div>
+                            <div class="diagram-box">GitHub (CI/CD)</div>
+                            <div class="diagram-box">Monitoreo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-amber-600 mb-3">📥 Entradas del Sistema</h3>
+                    <ul class="space-y-2 text-neutral-600">
+                        <li><strong>Videos:</strong> MOV, MPEG, MP4, MPG, AVI, WMV, FLV, 3GPP, WebM, DNxHR, ProRes, CineForm, HEVC (h265)</li>
+                        <li><strong>Imágenes:</strong> JPEG, PNG, WEBP, TIFF</li>
+                        <li><strong>Audio:</strong> WAV, MP3, AAC</li>
+                        <li><strong>Textos & Prompts:</strong> Archivos .txt, JSON, variables de flujo.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold text-amber-600 mb-3">📤 Salidas del Sistema</h3>
+                    <ul class="space-y-2 text-neutral-600 mb-4">
+                        <li><strong>YouTube / Facebook:</strong> 16:9 (Full HD / 4K)</li>
+                        <li><strong>YouTube Shorts / TikTok / Instagram Reels:</strong> 9:16 (1080×1920)</li>
+                        <li><strong>Facebook & Instagram Feed:</strong> 1:1 (1080×1080)</li>
+                        <li><strong>Archivos intermedios:</strong> Clips, audios, capturas, subtítulos (.srt).</li>
+                    </ul>
+                    <div class="chart-container">
+                        <canvas id="outputFormatsChart"></canvas>
+                    </div>
+                     <p class="text-xs text-center text-neutral-500 mt-2">Gráfico ilustrativo de anchos de resolución comunes.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="herramientas" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Componentes y Herramientas</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Esta sección detalla las herramientas y tecnologías recomendadas para cada tarea dentro del pipeline de automatización. Puedes filtrar las herramientas por categoría para una exploración más enfocada. Se incluyen notas importantes y puntos que requieren validación sobre el uso de ciertas APIs o servicios.
+            </p>
+            <div class="mb-6 flex flex-wrap gap-2" id="tool-filters">
+                <button data-category="all" class="tool-filter-btn active bg-amber-600 text-white px-4 py-2 rounded-md text-sm">Todas</button>
+                <button data-category="Descarga de Contenido" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Descarga</button>
+                <button data-category="Transcodificación & Filtros" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Transcodificación</button>
+                <button data-category="Scripting de Edición" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Scripting Edición</button>
+                <button data-category="Mejora con IA" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Mejora IA</button>
+                <button data-category="Orquestación de Flujos" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Orquestación</button>
+                <button data-category="Publicación (APIs)" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Publicación</button>
+                <button data-category="Monitoreo y Alertas" class="tool-filter-btn bg-amber-200 text-amber-800 px-4 py-2 rounded-md text-sm hover:bg-amber-300">Monitoreo</button>
+            </div>
+            <div id="tools-grid" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            </div>
+        </section>
+
+        <section id="flujo-trabajo" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Flujo de Trabajo con n8n</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                n8n es el corazón de la orquestación en este sistema. Aquí se presenta un ejemplo conceptual de un flujo de trabajo en n8n (representado en YAML) que ilustra cómo se podrían conectar los diferentes pasos del pipeline, desde la activación programada hasta la publicación. También se incluyen mejores prácticas para diseñar flujos robustos y mantenibles en n8n.
+            </p>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">📜 Ejemplo de Flujo n8n (YAML Conceptual) <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                <div class="code-block collapsible-content">
+<pre>
+nodes:
+  - id: trigger_schedule
+    type: n8n-nodes-base.scheduleTrigger
+    typeVersion: 1
+    parameters:
+      rule: '0 8 * * *' # Ejecución diaria a las 8 AM
+    name: "Daily Video Pipeline Trigger"
+
+  - id: set_keywords
+    type: n8n-nodes-base.set
+    typeVersion: 1
+    parameters:
+      values:
+        string:
+          - name: "searchKeywords"
+            value: "['ASMR relajación', 'noticias tech', 'tutorial cocina']"
+          - name: "videoSourcePath"
+            value: "/data/raw/"
+    name: "Define Variables de Flujo"
+
+  - id: download_videos_node
+    type: n8n-nodes-base.executeCommand
+    typeVersion: 1
+    parameters:
+      command: |
+        python /scripts/download_videos.py \
+          --keywords "{{ $json.searchKeywords }}" \
+          --output "{{ $json.videoSourcePath }}{{ $now.toFormat('yyyyMMdd') }}/"
+    name: "1. Descargar Videos"
+
+  # ... más nodos para edición, IA, split, etc. ...
+
+  - id: publish_node
+    type: n8n-nodes-base.executeCommand
+    typeVersion: 1
+    parameters:
+      command: |
+        python /scripts/publish.py \
+          --platforms "youtube,tiktok" \
+          --main_video "{{ $json.editedPath }}video.mp4" \
+          --credentials_file "/secrets/api_creds.json"
+    name: "4. Publicar Contenido"
+
+connections:
+  trigger_schedule:
+    main:
+      - - node: set_keywords
+  set_keywords:
+    main:
+      - - node: download_videos_node
+  # ... más conexiones ...
+  # (Nodo anterior a publish_node):
+  #   main:
+  #     - - node: publish_node
+</pre>
+                </div>
+                 <p class="text-xs text-neutral-500 mt-2">Nota: Este YAML es una representación conceptual. La lógica de bucle y el manejo dinámico de nombres de archivo se configuran en la UI de n8n.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                 <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">💡 Mejores Prácticas para n8n <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                 <div class="collapsible-content space-y-3 text-neutral-600">
+                    <p><strong>Modularidad:</strong> Dividir el pipeline en flujos de trabajo más pequeños y reutilizables.</p>
+                    <p><strong>Sub-flujos de Trabajo:</strong> Encapsular lógica compleja y repetitiva.</p>
+                    <p><strong>Lógica Condicional:</strong> Usar nodos `IF` y `Switch` para enrutamiento dinámico.</p>
+                    <p><strong>Manejo de Errores Robusto:</strong> Utilizar "Error Trigger" y ramas de flujo para errores.</p>
+                    <p><strong>Nodos `Wait`:</strong> Para respetar límites de tasa de APIs externas.</p>
+                    <p><strong>Control de Versiones:</strong> Exportar flujos como JSON y almacenarlos en Git.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="configuracion" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Configuración y Despliegue</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Esta sección cubre los aspectos prácticos de la puesta en marcha del sistema. Incluye los requerimientos del sistema, un ejemplo de configuración local utilizando Docker Compose, los pasos iniciales para la implementación, y una visión general de cómo se puede integrar un flujo de CI/CD con GitHub Actions.
+            </p>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">⚙️ Requerimientos del Sistema <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                <ul class="list-disc list-inside space-y-2 text-neutral-600 collapsible-content">
+                    <li><strong>Completamente Local:</strong> Procesamiento sin costos recurrentes de nube (salvo opcionales).</li>
+                    <li><strong>Modularidad:</strong> Pasos encapsulados en contenedores Docker, coordinados por n8n.</li>
+                    <li><strong>Acceso CLI y API Local:</strong> Scripts ejecutables por línea de comandos.</li>
+                    <li><strong>Plantillas de Resolución:</strong> Preconfiguraciones para formatos 16:9, 9:16, 1:1.</li>
+                    <li><strong>Flujo n8n Detallado:</strong> Nodos para descarga, generación, edición, split y publicación.</li>
+                    <li><strong>Monitorización y Logging:</strong> Registro de logs y métricas básicas.</li>
+                </ul>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">🐳 Configuración Local con Docker Compose (Ejemplo) <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                <div class="code-block collapsible-content">
+<pre>
+version: '3.8'
+services:
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - GENERIC_TIMEZONE=America/Bogota
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+      - ./workflow_scripts:/scripts
+      - ./video_data:/data
+    # FFmpeg debe estar disponible en la imagen de n8n o en un worker.
+
+  python_worker: # Opcional
+    build:
+      context: ./python_worker_dir 
+    restart: always
+    volumes:
+      - ./workflow_scripts:/scripts
+      - ./video_data:/data
+
+volumes:
+  n8n_data:
+  video_data:
+  workflow_scripts:
+</pre>
+                </div>
+                 <p class="text-xs text-neutral-500 mt-2">Nota: FFmpeg se usaría vía 'docker exec' o, preferiblemente, instalado en el contenedor de n8n/Python.</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+                <h3 class="text-xl font-semibold text-amber-600 mb-3 collapsible-header">🚀 Pasos para Implementación Inicial <span class="text-sm text-neutral-500">(Haz clic para expandir/colapsar)</span></h3>
+                <ol class="list-decimal list-inside space-y-2 text-neutral-600 collapsible-content">
+                    <li>Instalar Docker y Docker Compose.</li>
+                    <li>Configurar n8n básico con `docker-compose`.</li>
+                    <li>Desarrollar scripts Python modulares (descarga, edición, IA, publicación).</li>
+                    <li>Crear Dockerfiles para contenedores Python si es necesario.</li>
+                    <li>Diseñar y construir flujos en n8n gradualmente.</li>
+                    <li>Configurar APIs de plataformas sociales y almacenar credenciales de forma segura.</li>
+                    <li>Definir plantillas de edición y realizar pruebas exhaustivas.</li>
+                    <li>Optimizar parámetros y configurar monitoreo básico.</li>
+                    <li>Implementar CI/CD con GitHub Actions.</li>
+                </ol>
+            </div>
+        </section>
+
+        <section id="consideraciones" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Consideraciones Críticas</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Esta sección aborda puntos cruciales que deben tenerse en cuenta para el éxito y la sostenibilidad del sistema. Incluye el cumplimiento de políticas de contenido, las particularidades de las APIs de las plataformas de publicación, y optimizaciones de rendimiento. Presta especial atención a los elementos marcados para validación.
+            </p>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">📜 Política de Contenido Reutilizado (Ej. YouTube)</h4>
+                    <p class="text-neutral-600">El contenido debe tener una "transformación significativa" para ser monetizable. No basta con simples re-codificaciones. Se debe añadir valor único como narración, comentario original, edición creativa o elementos visuales dinámicos.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">📡 Consideraciones por Plataforma API</h4>
+                     <div class="validation-required">
+                        <strong>TikTok API:</strong> Contenido publicado por clientes no auditados queda restringido a visibilidad privada. Se requiere auditoría para publicaciones públicas.
+                    </div>
+                    <div class="validation-required mt-2">
+                        <strong>Vimeo API:</strong> El plan gratuito es muy limitado (1GB total, sin APIs robustas). Se requerirán planes de pago para uso significativo.
+                    </div>
+                     <div class="validation-required mt-2">
+                        <strong>Spotify (Podcasts):</strong> La subida se realiza mediante feed RSS desde una plataforma de alojamiento, no directamente con la API Web de Spotify.
+                    </div>
+                    <p class="text-neutral-600 mt-2">Otras APIs (YouTube, Instagram, Facebook, Twitter, LinkedIn) tienen sus propios requisitos de autenticación, cuotas y permisos específicos que deben gestionarse cuidadosamente.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">⚡ Manejo de Límites de API y Rendimiento</h4>
+                    <ul class="list-disc list-inside space-y-1 text-neutral-600">
+                        <li>Implementar lógica de reintento con retroceso exponencial.</li>
+                        <li>Monitorear encabezados de respuesta de límites de tasa.</li>
+                        <li>Usar nodos "Wait" en n8n para espaciar solicitudes.</li>
+                        <li>Optimizar FFmpeg: usar presets, ajustar CRF, paralelizar con threads, considerar aceleración por GPU.</li>
+                        <li>NAS (SMB/CIFS): Optimizar configuración o usar DAS para tareas intensivas.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="monitoreo" class="content-section">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-amber-700 mb-4">Monitoreo, Logging y Mantenimiento</h2>
+            <p class="mb-6 text-neutral-700 leading-relaxed">
+                Para asegurar la fiabilidad y eficiencia del sistema a largo plazo, es fundamental implementar buenas prácticas de monitoreo, logging y mantenimiento. Esta sección describe las estrategias y herramientas recomendadas para estas tareas, incluyendo la gestión de errores y la documentación del sistema.
+            </p>
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">📝 Logging</h4>
+                    <ul class="list-disc list-inside space-y-1 text-neutral-600">
+                        <li>Utilizar logging estructurado en Python (JSON).</li>
+                        <li>Establecer niveles de logging adecuados (DEBUG, INFO, WARNING).</li>
+                        <li>Revisar logs de n8n y contenedores Docker.</li>
+                        <li>Considerar centralización de logs (SigNoz, Loki, ELK Stack) para sistemas grandes.</li>
+                    </ul>
+                </div>
+                 <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">📊 Métricas y Seguimiento de Errores</h4>
+                    <p class="text-neutral-600 mb-2">Métricas clave: tiempos de procesamiento, videos procesados, tasas de error, uso de recursos.</p>
+                    <ul class="list-disc list-inside space-y-1 text-neutral-600">
+                        <li>Herramientas: Prometheus y Grafana para métricas y visualización.</li>
+                        <li>Sentry para seguimiento de errores.
+                            <div class="validation-required text-sm">
+                                <strong>Sentry (Nivel Gratuito):</strong> Limitado (1 usuario, 5k errores/mes). Considerar self-hosted o alternativas (SigNoz, Zabbix) si es insuficiente.
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">🔔 Mecanismos de Alerta</h4>
+                     <ul class="list-disc list-inside space-y-1 text-neutral-600">
+                        <li>Notificaciones de n8n para fallos en flujos.</li>
+                        <li>Alertas por correo electrónico (Python `smtplib` o servicios de API).</li>
+                        <li>Integración con mensajería (Slack, Discord) vía webhooks.</li>
+                        <li>Alertas desde sistemas de monitoreo (Grafana, Sentry).</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h4 class="text-lg font-semibold text-amber-600 mb-2">📚 Documentación y Mantenimiento</h4>
+                     <ul class="list-disc list-inside space-y-1 text-neutral-600">
+                        <li>`README.md` detallado (descripción, instalación, uso, etc.).</li>
+                        <li>Comentarios en el código (PEP8) y en workflows de n8n (notas).</li>
+                        <li>Manual de Operaciones (Runbook) para procedimientos comunes.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-neutral-800 text-amber-100 text-center p-6 mt-12">
+        <p class="text-sm">&copy; <span id="currentYear"></span> Plan de Automatización de Video. SPA Interactiva.</p>
+    </footer>
+
+<script>
+    const navLinks = document.querySelectorAll('.nav-link');
+    const contentSections = document.querySelectorAll('.content-section');
+    const toolFilters = document.getElementById('tool-filters');
+    const toolsGrid = document.getElementById('tools-grid');
+    const collapsibleHeaders = document.querySelectorAll('.collapsible-header');
+
+    const toolsData = [
+        { category: "Descarga de Contenido", name: "yt-dlp (Unlicense)", description: "Herramienta principal para descarga desde YouTube y otros sitios. Robusta y con mantenimiento activo." },
+        { category: "Descarga de Contenido", name: "QuickMediaDL (MIT)", description: "Biblioteca Python construida sobre yt-dlp, útil si se requiere una licencia MIT específica." },
+        { category: "Descarga de Contenido", name: "pytube (MIT)", description: "Alternativa para descarga de YouTube. Verificar compatibilidad y mantenimiento." },
+        { category: "Descarga de Contenido", name: "Invidious API", description: "Se recomienda eliminar. Alternativa no oficial a YouTube con riesgos legales, estabilidad incierta y no para uso comercial.", validation: "Eliminar Invidious API debido a riesgos legales y de estabilidad." },
+        { category: "Transcodificación & Filtros", name: "FFmpeg (LGPL/GPL)", description: "Procesamiento de video/audio por línea de comandos. Esencial para casi todas las tareas de manipulación." },
+        { category: "Scripting de Edición", name: "MoviePy (MIT)", description: "Biblioteca Python para edición programática de video: unir, recortar, añadir texto/overlays, transiciones." },
+        { category: "Mejora con IA", name: "Manim (MIT)", description: "Generación de animaciones matemáticas y de texto en video, ideal para contenido educativo. (Categorizado como Mejora con IA por su naturaleza generativa avanzada)" },
+        { category: "Mejora con IA", name: "Stable Diffusion + Deforum (CreativeML Open RAIL-M)", description: "Pipeline local de texto a video. Requiere hardware considerable (GPU)." },
+        { category: "Mejora con IA", name: "gTTS (Google Text-to-Speech) (MIT)", description: "Interfaz Python para la API de Google Translate TTS. Fácil de usar para voces estándar." },
+        { category: "Mejora con IA", name: "pyttsx3 (BSD)", description: "Biblioteca TTS offline y multiplataforma. Voces más robóticas pero 100% local." },
+        { category: "Mejora con IA", name: "Tortoise-TTS (Apache 2.0)", description: "Modelo de TTS avanzado para generar voces naturales y clonación de voz. Requiere GPU." },
+        { category: "Mejora con IA", name: "OpenAI Whisper / whisperX (MIT)", description: "Modelos para transcripción de audio a texto de alta precisión. whisperX ofrece mejor alineación y diarización." },
+        { category: "Mejora con IA", name: "OpenCV (Apache 2.0)", description: "Biblioteca para visión por computadora, útil para detección de escenas, objetos, etc." },
+        { category: "Procesamiento de Audio", name: "pydub (MIT)", description: "Manipulación de audio sencilla con Python." },
+        { category: "Procesamiento de Audio", name: "librosa (ISC)", description: "Análisis de audio avanzado." },
+        { category: "Procesamiento de Audio", name: "Spleeter (MIT)", description: "Separación de fuentes de audio." },
+        { category: "Orquestación de Flujos", name: "n8n (Fair-Code / Self-hosted: Apache 2.0 con ELv2)", description: "Plataforma visual para automatización de flujos de trabajo. Se ejecutará localmente vía Docker." },
+        { category: "Contenerización", name: "Docker (Apache 2.0)", description: "Para crear, desplegar y ejecutar aplicaciones en contenedores." },
+        { category: "Contenerización", name: "Docker Compose (Apache 2.0)", description: "Herramienta para definir y ejecutar aplicaciones Docker multi-contenedor." },
+        { category: "Almacenamiento Local", name: "Volúmenes Docker, NAS (SMB/CIFS)", description: "Para archivos. Nota sobre NAS: Considerar cuellos de botella de rendimiento, optimizar SMB." },
+        { category: "Almacenamiento Cloud (Opcional)", name: "Google Cloud Storage, AWS S3, Azure Blob Storage", description: "Para backups o archivo a largo plazo. Considerar políticas de ciclo de vida." },
+        { category: "CI/CD", name: "GitHub Actions", description: "Automatización de pruebas, construcción de imágenes Docker y despliegue." },
+        { category: "Publicación (APIs)", name: "APIs de YouTube, TikTok, Instagram, Twitter, Facebook, Vimeo, LinkedIn", description: "Utilizar las APIs oficiales. Verificar limitaciones de cada API.", validationPoints: [
+            { platform: "TikTok", note: "Contenido por clientes no auditados es privado. Requiere auditoría para público." },
+            { platform: "Vimeo", note: "Plan gratuito muy limitado. Requiere planes de pago para uso significativo." },
+            { platform: "Spotify (Podcasts)", note: "Subida vía feed RSS desde plataforma de alojamiento, no API Web directa." }
+        ]},
+        { category: "Monitoreo y Alertas", name: "Prometheus (Apache 2.0)", description: "Recolección de métricas." },
+        { category: "Monitoreo y Alertas", name: "Grafana (Apache 2.0)", description: "Visualización de métricas y logs." },
+        { category: "Monitoreo y Alertas", name: "Sentry (Gratuito limitado / Self-hosted BSD)", description: "Seguimiento de errores.", validation: "Nivel gratuito limitado (1 usuario, 5k errores/mes). Considerar alternativas." },
+        { category: "Monitoreo y Alertas", name: "SigNoz, Grafana Loki, Zabbix", description: "Alternativas/complementos a Sentry para monitoreo más completo." }
+    ];
+
+    function displayTools(filterCategory = 'all') {
+        toolsGrid.innerHTML = '';
+        const filteredTools = filterCategory === 'all' ? toolsData : toolsData.filter(tool => tool.category === filterCategory);
+
+        if (filteredTools.length === 0) {
+            toolsGrid.innerHTML = `<p class="text-neutral-600 col-span-full text-center">No hay herramientas en esta categoría.</p>`;
+            return;
+        }
+        
+        filteredTools.forEach(tool => {
+            const toolElement = document.createElement('div');
+            toolElement.className = 'tool-card transform hover:scale-105 transition-transform duration-300 ease-in-out';
+            let validationHTML = '';
+            if (tool.validation) {
+                validationHTML = `<div class="validation-required text-sm"><strong>⚠️ Requiere Validación:</strong> ${tool.validation}</div>`;
+            }
+            if (tool.validationPoints) {
+                tool.validationPoints.forEach(vp => {
+                     validationHTML += `<div class="validation-required text-sm mt-1"><strong>⚠️ ${vp.platform}:</strong> ${vp.note}</div>`;
+                });
+            }
+            toolElement.innerHTML = `
+                <h3 class="text-lg font-semibold mb-1">${tool.name}</h3>
+                <p class="text-xs text-neutral-500 mb-2">Categoría: ${tool.category}</p>
+                <p class="text-sm text-neutral-600">${tool.description}</p>
+                ${validationHTML}
+            `;
+            toolsGrid.appendChild(toolElement);
+        });
+    }
+
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1);
+
+            navLinks.forEach(navLink => navLink.classList.remove('active'));
+            link.classList.add('active');
+
+            contentSections.forEach(section => {
+                if (section.id === targetId) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+            window.scrollTo({ top: 0, behavior: 'smooth' }); 
+        });
+    });
+    
+    if (toolFilters) {
+        toolFilters.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tool-filter-btn')) {
+                document.querySelectorAll('.tool-filter-btn').forEach(btn => btn.classList.remove('bg-amber-600', 'text-white'));
+                document.querySelectorAll('.tool-filter-btn').forEach(btn => btn.classList.add('bg-amber-200', 'text-amber-800'));
+                e.target.classList.add('bg-amber-600', 'text-white');
+                e.target.classList.remove('bg-amber-200', 'text-amber-800');
+                const category = e.target.dataset.category;
+                displayTools(category);
+            }
+        });
+    }
+
+    collapsibleHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            if (content.classList.contains('collapsible-content')) {
+                content.classList.toggle('open');
+                 header.querySelector('span').textContent = content.classList.contains('open') ? '(Haz clic para colapsar)' : '(Haz clic para expandir)';
+            }
+        });
+    });
+    
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+    function initChart() {
+        const ctx = document.getElementById('outputFormatsChart')?.getContext('2d');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['YouTube/FB (16:9)', 'Shorts/Reels (9:16)', 'Feed Cuadrado (1:1)'],
+                datasets: [{
+                    label: 'Ancho de Resolución Común (px)',
+                    data: [1920, 1080, 1080],
+                    backgroundColor: [
+                        'rgba(217, 119, 6, 0.6)', // amber-600
+                        'rgba(245, 158, 11, 0.6)', // amber-500
+                        'rgba(251, 191, 36, 0.6)'  // amber-400
+                    ],
+                    borderColor: [
+                        'rgba(217, 119, 6, 1)',
+                        'rgba(245, 158, 11, 1)',
+                        'rgba(251, 191, 36, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Ancho (px)' }
+                    },
+                    x: {
+                        title: { display: true, text: 'Formato de Plataforma' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y + 'px de ancho';
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                }
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        displayTools();
+        initChart();
+        if (contentSections.length > 0) contentSections[0].classList.add('active');
+        if (navLinks.length > 0) navLinks[0].classList.add('active');
+
+        // Open first collapsible in each section if any
+        document.querySelectorAll('.content-section').forEach(section => {
+            const firstCollapsible = section.querySelector('.collapsible-content');
+            const firstHeader = section.querySelector('.collapsible-header');
+            if (firstCollapsible && firstHeader) {
+                firstCollapsible.classList.add('open');
+                const span = firstHeader.querySelector('span');
+                if (span) span.textContent = '(Haz clic para colapsar)';
+            }
+        });
+    });
+
+</script>
+</body>
+</html>
