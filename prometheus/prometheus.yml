@@ -1,11 +1,9 @@
+# prometheus.yml
+# Define scraping básico para el propio servidor Prometheus en el stack local.
 global:
   scrape_interval: 5s
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
-      
-  - job_name: "docker"
-    static_configs:
-      - targets: ["host.docker.internal:9323"]
+      - targets: ['prometheus:9090']

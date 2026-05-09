@@ -1,3 +1,5 @@
+# config.yml (ntfy)
+# Configuración mínima local de ntfy con rutas de caché y autenticación dentro del repo.
 base-url: http://localhost:2580
-cache-file: C:/SystemS/comunity-ini/ntfy/cache.db
-auth-file: C:/SystemS/comunity-ini/ntfy/auth.db
+cache-file: ./ntfy/cache.db
+auth-file: ./ntfy/auth.db

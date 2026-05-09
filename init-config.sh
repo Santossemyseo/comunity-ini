@@ -1,105 +1,94 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+# init-config.sh
+# Propósito: preparar configuraciones base y dependencias para el stack local
+# (Prometheus, Plausible y ntfy), detectando Linux/Windows y generando archivos
+# mínimos funcionales si no existen.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Detectar el sistema operativo
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+if [[ "${OSTYPE:-}" == "linux-gnu"* ]]; then
     OS="linux"
-    PROMETHEUS_CONFIG="/etc/prometheus/prometheus.yml"
-    PLAUSIBLE_CONFIG="/app/plausible/plausible-config.env"
-    NTFY_CONFIG="/etc/ntfy/config.yml"
-    CACHE_FILE="/var/cache/ntfy/cache.db"
-    AUTH_FILE="/etc/ntfy/auth.db"
-elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
+elif [[ "${OSTYPE:-}" == "msys"* || "${OSTYPE:-}" == "cygwin"* ]]; then
     OS="windows"
-    PROMETHEUS_CONFIG="C:/SystemS/comunity-ini/prometheus/prometheus.yml"
-    PLAUSIBLE_CONFIG="C:/SystemS/comunity-ini/plausible/plausible-config.env"
-    NTFY_CONFIG="C:/SystemS/comunity-ini/ntfy/config.yml"
-    CACHE_FILE="C:/SystemS/comunity-ini/ntfy/cache.db"
-    AUTH_FILE="C:/SystemS/comunity-ini/ntfy/auth.db"
 else
-    echo "Sistema operativo no soportado"
+    echo "Sistema operativo no soportado: ${OSTYPE:-desconocido}"
     exit 1
 fi
 
+PROMETHEUS_CONFIG="$SCRIPT_DIR/prometheus/prometheus.yml"
+PLAUSIBLE_CONFIG="$SCRIPT_DIR/plausible/plausible-config.env"
+NTFY_CONFIG="$SCRIPT_DIR/ntfy/config.yml"
+CACHE_FILE="$SCRIPT_DIR/ntfy/cache.db"
+AUTH_FILE="$SCRIPT_DIR/ntfy/auth.db"
+
 echo "Detectado sistema operativo: $OS"
 
-# Función para instalar dependencias en Linux
 install_dependencies_linux() {
     echo "Instalando dependencias en Linux..."
-    sudo apt update && sudo apt upgrade -y
-    sudo apt install -y docker.io docker-compose git curl wget
-    sudo systemctl enable docker && sudo systemctl start docker
+    sudo apt update
+    sudo apt install -y docker.io docker-compose-plugin git curl wget openssl
+    sudo systemctl enable docker
+    sudo systemctl start docker
 }
 
-# Función para instalar dependencias en Windows (requiere Chocolatey)
 install_dependencies_windows() {
     echo "Instalando dependencias en Windows..."
-    
-    # Instalar Chocolatey si no está instalado
-    if ! choco -v &> /dev/null; then
-        echo "Instalando Chocolatey..."
-        powershell -NoProfile -ExecutionPolicy Bypass -Command \
-        "Set-ExecutionPolicy Bypass -Scope Process -Force; \
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+    if ! command -v choco >/dev/null 2>&1; then
+        echo "Chocolatey no está instalado. Instálalo manualmente para continuar."
+        return 1
     fi
-
-    # Instalar Docker, Git y dependencias
-    choco install -y docker-desktop git curl wget
+    choco install -y docker-desktop git curl wget openssl.light
 }
 
-# Instalar dependencias según el sistema
-if [ "$OS" == "linux" ]; then
-    install_dependencies_linux
-elif [ "$OS" == "windows" ]; then
-    install_dependencies_windows
+# Instalar dependencias según el sistema (opcional)
+if [[ "${1:-}" == "--install-deps" ]]; then
+    if [[ "$OS" == "linux" ]]; then
+        install_dependencies_linux
+    else
+        install_dependencies_windows
+    fi
 fi
 
-# Clonar repositorios de software si no existen
-#if [ ! -d "C:/SystemS/comunity-ini/prometheus" ] && [ "$OS" == "windows" ]; then
-#    git clone https://github.com/prometheus/prometheus.git C:/SystemS/comunity-ini/prometheus
-#fi
+mkdir -p "$(dirname "$PROMETHEUS_CONFIG")" "$(dirname "$PLAUSIBLE_CONFIG")" "$(dirname "$NTFY_CONFIG")"
 
-#if [ ! -d "/etc/prometheus" ] && [ "$OS" == "linux" ]; then
-#    git clone https://github.com/prometheus/prometheus.git /etc/prometheus
-#fi
-
-# Crear archivo prometheus.yml si no existe
-if [ ! -f "$PROMETHEUS_CONFIG" ]; then
+if [[ ! -f "$PROMETHEUS_CONFIG" ]]; then
     cat <<EOL > "$PROMETHEUS_CONFIG"
+# Prometheus scrape config para el stack docker local.
 global:
   scrape_interval: 5s
 
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
-      
-  - job_name: "docker"
-    static_configs:
-      - targets: ["host.docker.internal:9323"]
+      - targets: ['prometheus:9090']
 EOL
     echo "Archivo prometheus.yml creado en $PROMETHEUS_CONFIG"
 fi
 
-# Crear archivo plausible-config.env si no existe
-if [ ! -f "$PLAUSIBLE_CONFIG" ]; then
-    SECRET_KEY=$(openssl rand -hex 32)
+if [[ ! -f "$PLAUSIBLE_CONFIG" ]]; then
+    SECRET_KEY="$(openssl rand -hex 32)"
     cat <<EOL > "$PLAUSIBLE_CONFIG"
+# Variables mínimas para Plausible en docker-compose.
 BASE_URL=http://localhost:8000
 SECRET_KEY_BASE=$SECRET_KEY
-DATABASE_URL=postgres://plausible_user:password@db:5432/plausible_db
+DATABASE_URL=postgres://plausible:plausible@plausible-db:5432/plausible
+CLICKHOUSE_DATABASE_URL=http://plausible-events-db:8123/plausible_events_db
 EOL
     echo "Archivo plausible-config.env creado en $PLAUSIBLE_CONFIG"
 fi
 
-# Crear archivo ntfy.yml si no existe
-if [ ! -f "$NTFY_CONFIG" ]; then
+if [[ ! -f "$NTFY_CONFIG" ]]; then
     cat <<EOL > "$NTFY_CONFIG"
+# Config base de ntfy para entorno local.
 base-url: http://localhost:2580
 cache-file: $CACHE_FILE
 auth-file: $AUTH_FILE
 EOL
-    echo "Archivo ntfy.yml creado en $NTFY_CONFIG"
+    echo "Archivo ntfy/config.yml creado en $NTFY_CONFIG"
 fi
 
-echo "✅ Instalación y configuración completadas."
+echo "✅ Configuración inicial completada."
